@@ -149,19 +149,21 @@ const IPTVPlayer = {
     this.setLoading(true);
     this.clearError();
 
-    // Determine stream URL — use proxy if toggled on or forced
-    const shouldProxy = forceProxy || this.useProxy;
+    // Check if the URL is already proxied (e.g. LiveTV channels pre-proxied in app.js)
+    const alreadyProxied = channel.url.startsWith('/proxy?url=') || channel.url.includes('/proxy?url=');
+
+    // Determine stream URL — use proxy if toggled on or forced, but don't double-proxy
+    const shouldProxy = !alreadyProxied && (forceProxy || this.useProxy);
     const rawUrl = channel.url;
-    // Build absolute proxy URL (HLS.js needs absolute URLs for segments)
-    const proxyBase = window.location.origin + '/proxy?url=';
-    const streamUrl = shouldProxy
-      ? `${proxyBase}${encodeURIComponent(rawUrl)}`
+    // Use a simple relative path so it works on any host (localhost or deployed)
+    const streamUrl = (shouldProxy && !alreadyProxied)
+      ? `/proxy?url=${encodeURIComponent(rawUrl)}`
       : rawUrl;
 
     // Show/hide proxy status badge in controls bar
-    this._updateProxyBadge(shouldProxy);
+    this._updateProxyBadge(shouldProxy || alreadyProxied);
 
-    if (shouldProxy) {
+    if (shouldProxy || alreadyProxied) {
       console.log('🛡️ Routing stream through CORS proxy:', streamUrl);
     }
 
@@ -197,7 +199,7 @@ const IPTVPlayer = {
           switch (data.type) {
             case Hls.ErrorTypes.NETWORK_ERROR:
               console.error('HLS Fatal Network Error:', data);
-              if (!this._retriedWithProxy && !this.useProxy) {
+              if (!this._retriedWithProxy && !this.useProxy && !alreadyProxied) {
                 // Step 1: retry once via proxy
                 console.log('⚡ Auto-retrying with CORS proxy...');
                 this._retriedWithProxy = true;

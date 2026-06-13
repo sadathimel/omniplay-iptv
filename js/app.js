@@ -3,8 +3,10 @@
  */
 
 // Custom IPTV source — Bangladesh/India/Sports focused
-const LIVETV_API = 'http://198.195.239.50/tv_channels.json';
-const LIVETV_IMG_BASE = 'http://198.195.239.50/';
+// Always route through local proxy to avoid mixed-content & CORS issues
+const LIVETV_HOST = 'http://198.195.239.50';
+const LIVETV_API = '/proxy?url=' + encodeURIComponent('http://198.195.239.50/tv_channels.json');
+const LIVETV_IMG_BASE = '/proxy?url=' + encodeURIComponent('http://198.195.239.50/');
 
 const app = {
   // Application State
@@ -63,6 +65,16 @@ const app = {
     const quickStartBtn = document.getElementById('btn-quick-start');
     if (quickStartBtn) {
       quickStartBtn.addEventListener('click', () => this.loadLiveTVSource());
+    }
+
+    // 6c. Wire BanglaIndia Channel pill
+    const banglaIndiaPill = document.getElementById('pill-banglaindia');
+    if (banglaIndiaPill) {
+      banglaIndiaPill.addEventListener('click', () => {
+        document.querySelectorAll('.pill-btn').forEach(b => b.classList.remove('active'));
+        banglaIndiaPill.classList.add('active');
+        this.loadBanglaIndiaSource();
+      });
     }
 
     // 7. Load default theme
@@ -332,8 +344,8 @@ const app = {
   async loadLiveTVSource() {
     IPTVUI.updateConnectionStatus('loading', 'Loading LiveTV channels...');
     try {
-      const res = await this.fetchWithTimeout(LIVETV_API, { timeout: 5000 });
-      if (!res.ok) throw new Error('LiveTV API failed');
+      const res = await this.fetchWithTimeout(LIVETV_API, { timeout: 8000 });
+      if (!res.ok) throw new Error(`LiveTV API failed: ${res.status}`);
 
       const data = await res.json();
       const channels = data.channels
@@ -341,8 +353,9 @@ const app = {
         .map((ch, i) => ({
           id: `livetv-${ch.name.replace(/\s+/g, '-').toLowerCase()}`,
           name: ch.name,
-          url: ch.url,
-          logo: ch.logo ? `${LIVETV_IMG_BASE}${ch.logo}` : '',
+          // Always route channel stream through local proxy for CORS bypass
+          url: '/proxy?url=' + encodeURIComponent(ch.url),
+          logo: ch.logo ? (LIVETV_IMG_BASE + encodeURIComponent(ch.logo)) : '',
           groups: [ch.category],
           countryCode: 'BD',
           headers: {}
@@ -357,8 +370,46 @@ const app = {
       IPTVUI.updateConnectionStatus('online', `${channels.length} channels loaded`);
       console.log(`✅ LiveTV source loaded: ${channels.length} channels`);
     } catch (err) {
-      console.warn('LiveTV source failed, falling back to iptv-org:', err);
+      console.warn('LiveTV source failed, falling back to iptv-org:', err.message);
       await this.loadCountryPlaylist('us', 'United States');
+    }
+  },
+
+  /**
+   * Loads all channels from the BD/India server (198.195.239.50)
+   * Dedicated BanglaIndia button — shows all categories from the server.
+   */
+  async loadBanglaIndiaSource() {
+    IPTVUI.updateConnectionStatus('loading', 'Loading BanglaIndia channels...');
+    try {
+      const res = await this.fetchWithTimeout(LIVETV_API, { timeout: 8000 });
+      if (!res.ok) throw new Error(`BanglaIndia API failed: ${res.status}`);
+
+      const data = await res.json();
+      const channels = data.channels
+        .filter(ch => ch.status !== 'hidden')
+        .map((ch) => ({
+          id: `banglaindia-${ch.name.replace(/\s+/g, '-').toLowerCase()}`,
+          name: ch.name,
+          url: '/proxy?url=' + encodeURIComponent(ch.url),
+          logo: ch.logo ? (LIVETV_IMG_BASE + encodeURIComponent(ch.logo)) : '',
+          groups: [ch.category],
+          countryCode: 'BD',
+          headers: {}
+        }));
+
+      if (channels.length === 0) throw new Error('No channels returned');
+
+      this.state.allChannels = channels;
+      this.state.currentPlaylistName = '🇧🇩🇮🇳 BanglaIndia Channel';
+      this.setupChannelFilters('country');
+      this.applyFiltersAndSort();
+      IPTVUI.updateConnectionStatus('online', `${channels.length} BanglaIndia channels loaded`);
+      console.log(`✅ BanglaIndia source loaded: ${channels.length} channels`);
+    } catch (err) {
+      console.warn('BanglaIndia source failed:', err.message);
+      IPTVUI.updateConnectionStatus('error', 'Failed to load BanglaIndia channels');
+      alert('Could not load BanglaIndia channels. Make sure the server (node server.js) is running on localhost:3000.');
     }
   },
 

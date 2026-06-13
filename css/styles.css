@@ -299,6 +299,22 @@ body {
   transform: translateY(-1px);
 }
 
+/* BanglaIndia Channel pill — green/teal patriotic style */
+.pill-banglaindia {
+  background: linear-gradient(135deg, #059669, #0d9488);
+  border-color: #059669;
+  color: white;
+  font-weight: 700;
+  box-shadow: 0 2px 10px rgba(5, 150, 105, 0.3);
+}
+.pill-banglaindia:hover,
+.pill-banglaindia.active {
+  background: linear-gradient(135deg, #10b981, #059669);
+  box-shadow: 0 4px 16px rgba(5, 150, 105, 0.5);
+  transform: translateY(-1px);
+}
+
+
 /* Filter Dropdowns in Sidebar */
 .sidebar-dropdowns {
   padding: 12px 16px;
