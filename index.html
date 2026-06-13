@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>OmniPlay IPTV - Watch Live TV Online</title>
+  <meta name="description" content="Stream live television channels from all over the world. Free, open-source, and premium two-pane layout.">
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <!-- CSS -->
+  <link rel="stylesheet" href="css/styles.css">
+  <!-- CDNs for Player & Icons -->
+  <script src="https://cdn.jsdelivr.net/npm/hls.js@1.5.8/dist/hls.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/lucide@0.321.0/dist/umd/lucide.min.js"></script>
+</head>
+<body>
+
+  <!-- App Wrapper -->
+  <div class="app-container">
+    
+    <!-- LEFT COLUMN: SIDEBAR CHANNEL DIRECTORY -->
+    <aside class="sidebar-pane" id="sidebar">
+      
+      <!-- Brand & Global Action Buttons -->
+      <div class="sidebar-header">
+        <div class="brand" id="brand-logo-btn" style="cursor: pointer;">
+          <div class="logo-icon">
+            <i data-lucide="tv"></i>
+          </div>
+          <span class="brand-title">OmniPlay<span class="logo-accent">IPTV</span></span>
+        </div>
+        
+        <div class="header-actions">
+          <button class="icon-action-btn" id="theme-toggle" title="Toggle Theme">
+            <i data-lucide="moon"></i>
+          </button>
+          <button class="icon-action-btn" id="btn-open-custom" title="Custom M3U Playlist">
+            <i data-lucide="folder-open"></i>
+          </button>
+          <button class="icon-action-btn" id="btn-open-settings" title="Settings">
+            <i data-lucide="settings"></i>
+          </button>
+          <a href="#" class="apk-download-badge" title="Download Android App (Simulated)">
+            <i data-lucide="download"></i>
+          </a>
+        </div>
+      </div>
+
+      <!-- Real-Time Search Box -->
+      <div class="sidebar-search">
+        <div class="search-box">
+          <i data-lucide="search" class="search-icon"></i>
+          <input type="text" id="sidebar-search-input" placeholder="Search channels...">
+          <button class="clear-search" id="sidebar-clear-search" style="display: none;">
+            <i data-lucide="x"></i>
+          </button>
+        </div>
+      </div>
+
+      <!-- Navigation Filter Pills -->
+      <div class="filter-pills">
+        <button class="pill-btn active" data-filter="all">All</button>
+        <button class="pill-btn" data-filter="favs">Favs</button>
+        <button class="pill-btn" data-filter="sports">Sports</button>
+        <button class="pill-btn" data-filter="news">News</button>
+        <button class="pill-btn pill-livetv" id="pill-livetv" title="BD/India/Sports — Live streams from local server">🏴 LiveTV</button>
+      </div>
+
+      <!-- Dropdown Filter Selects -->
+      <div class="sidebar-dropdowns">
+        <div class="select-wrapper" id="country-filter-wrapper" style="display: none;">
+          <select id="channel-country-filter">
+            <option value="all">All Countries</option>
+          </select>
+        </div>
+        <div class="select-wrapper" id="category-filter-wrapper" style="display: none;">
+          <select id="channel-category-filter">
+            <option value="all">All Categories</option>
+          </select>
+        </div>
+        <div class="select-wrapper">
+          <select id="channel-sort">
+            <option value="name-asc">Sort: A-Z</option>
+            <option value="name-desc">Sort: Z-A</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Channel Load Counters -->
+      <div class="channels-count-bar">
+        <span id="channels-count-text">0 channels loaded</span>
+        <button class="btn-text" id="clear-active-filters" style="display: none;">Clear filter</button>
+      </div>
+
+      <!-- Scrollable Channels List -->
+      <div class="sidebar-channel-list" id="sidebar-channel-container">
+        <!-- Dynamic channel list elements -->
+      </div>
+      
+      <!-- Load More Button -->
+      <div class="sidebar-load-more" id="sidebar-load-more" style="display: none;">
+        <button class="btn btn-secondary btn-sm" id="sidebar-load-more-btn" style="width: 100%;">Load More</button>
+      </div>
+    </aside>
+
+    <!-- RIGHT COLUMN: MEDIA PLAYBACK & INFO STAGE -->
+    <main class="media-stage">
+      
+      <!-- Mobile Header Overlay -->
+      <header class="mobile-header">
+        <button class="menu-toggle" id="mobile-menu-toggle" aria-label="Toggle Channel List">
+          <i data-lucide="menu"></i>
+        </button>
+        <div class="mobile-brand">
+          <span class="brand-title">OmniPlay <span class="logo-accent">IPTV</span></span>
+        </div>
+        <div class="connection-status" id="connection-status">
+          <span class="status-indicator online"></span>
+        </div>
+      </header>
+
+      <!-- Stage Viewport Container -->
+      <div class="stage-viewport">
+        
+        <!-- WELCOME / DASHBOARD STATE -->
+        <div class="stage-view active" id="stage-welcome">
+          <div class="welcome-hero">
+            <span class="hero-badge">Worldwide Live Streams</span>
+            <h1>Welcome to OmniPlay IPTV</h1>
+            <p>Stream free live television channels, sports broadcasts, news feeds, and movies. Select a category below or search in the sidebar directory to start watching.</p>
+            
+            <div class="welcome-quick-actions">
+              <button class="btn btn-primary" id="btn-quick-start">
+                <i data-lucide="zap"></i> Load LiveTV (BD/IN/Sports)
+              </button>
+            </div>
+          </div>
+
+          <div class="stage-section">
+            <h3 class="section-title"><i data-lucide="flame" style="color: #ec4899;"></i> Browse Categories</h3>
+            <div class="categories-selector-grid" id="welcome-categories-grid">
+              <!-- Category cards -->
+            </div>
+          </div>
+
+          <div class="stage-section">
+            <h3 class="section-title"><i data-lucide="globe" style="color: #3b82f6;"></i> Popular Countries</h3>
+            <div class="countries-selector-grid" id="welcome-countries-grid">
+              <!-- Country cards -->
+            </div>
+          </div>
+        </div>
+
+        <!-- ACTIVE PLAYBACK STATE -->
+        <div class="stage-view" id="stage-player">
+          
+          <!-- Immersive Embedded Video Player -->
+          <div class="player-stage-box">
+            <div class="video-container-wrapper" id="video-wrapper">
+              <video id="iptv-video-player" playsinline preload="auto"></video>
+              
+              <!-- Buffering / Loading Overlay -->
+              <div class="player-overlay" id="player-loading-overlay" style="display: none;">
+                <div class="spinner-glow"></div>
+                <p>Loading Live Stream...</p>
+              </div>
+
+              <div class="player-overlay error" id="player-error-overlay" style="display: none;">
+                <i data-lucide="alert-triangle" class="error-icon"></i>
+                <h3>Unable to Load Stream</h3>
+                <p class="error-msg" id="player-error-message">This stream is offline or blocked by browser CORS policy.</p>
+                <div class="error-actions">
+                  <button class="btn btn-sm btn-secondary" id="player-retry-btn">
+                    <i data-lucide="refresh-cw"></i> Retry
+                  </button>
+                  <button class="btn btn-sm btn-primary" id="player-next-btn">
+                    <i data-lucide="skip-forward"></i> Try Next Channel
+                  </button>
+                  <button class="btn btn-sm btn-text" id="player-troubleshoot-btn">
+                    Why does this happen?
+                  </button>
+                </div>
+              </div>
+
+              <!-- Custom Player Overlay Controls -->
+              <div class="custom-video-controls" id="custom-controls">
+                <div class="controls-row">
+                  <div class="controls-left">
+                    <button class="control-btn" id="ctrl-play-pause" title="Play/Pause">
+                      <i data-lucide="play" id="play-icon"></i>
+                    </button>
+                    <div class="volume-container">
+                      <button class="control-btn" id="ctrl-mute" title="Mute">
+                        <i data-lucide="volume-2" id="volume-icon"></i>
+                      </button>
+                      <input type="range" id="volume-slider" min="0" max="1" step="0.05" value="0.8">
+                    </div>
+                    <div class="stream-info-overlay">
+                      <span class="live-badge">LIVE</span>
+                    </div>
+                  </div>
+
+                  <div class="controls-right">
+                    <button class="control-btn" id="ctrl-aspect-ratio" title="Aspect Ratio">
+                      <i data-lucide="aspect-ratio"></i>
+                    </button>
+                    <button class="control-btn" id="ctrl-pip" title="Picture in Picture">
+                      <i data-lucide="pip"></i>
+                    </button>
+                    <button class="control-btn" id="ctrl-fullscreen" title="Fullscreen">
+                      <i data-lucide="maximize"></i>
+                    </button>
+                    <button class="control-btn close-player-btn" id="ctrl-close-panel" title="Close Stream">
+                      <i data-lucide="x"></i>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Docked Stream Metadata Details -->
+          <div class="playback-info-card">
+            <div class="info-card-left">
+              <div class="info-logo-container">
+                <img id="info-channel-logo" src="" alt="" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                <div class="logo-fallback" id="info-logo-fallback">TV</div>
+              </div>
+              <div class="info-text-details">
+                <h2 id="info-channel-name">No Stream Playing</h2>
+                <div class="info-badges">
+                  <span class="badge badge-accent" id="info-channel-group">Animation</span>
+                  <span class="badge badge-secondary" id="info-channel-resolution">1080p</span>
+                  <span class="badge badge-success"><span class="status-dot"></span> LIVE</span>
+                </div>
+              </div>
+            </div>
+            
+            <div class="info-card-right">
+              <button class="btn btn-accent btn-sm" id="btn-scan-channels" title="Scan list for first working stream">
+                <i data-lucide="radar"></i> Find Working Channel
+              </button>
+              <button class="btn btn-secondary btn-sm" id="btn-share-channel">
+                <i data-lucide="share-2"></i> Share
+              </button>
+              <button class="btn btn-secondary btn-sm" id="btn-fav-toggle">
+                <i data-lucide="heart" id="info-fav-icon"></i> Favorite
+              </button>
+            </div>
+          </div>
+
+          <!-- Browse Categories Quick selector under player -->
+          <div class="stage-section" style="margin-top: 32px;">
+            <h3 class="section-title"><i data-lucide="flame" style="color: #ec4899; width: 18px;"></i> Change Category</h3>
+            <div class="categories-selector-grid" id="player-categories-grid">
+              <!-- Grid categories -->
+            </div>
+          </div>
+
+        </div>
+
+      </div>
+    </main>
+
+  </div>
+
+  <!-- MODAL: Custom Playlist Loader -->
+  <div class="modal-overlay" id="custom-playlist-modal">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h2><i data-lucide="folder-open" class="modal-icon-header"></i> Load Custom Playlist</h2>
+        <button class="modal-close" id="close-custom-modal"><i data-lucide="x"></i></button>
+      </div>
+      <div class="modal-content">
+        <div class="form-group">
+          <label for="playlist-url">Playlist URL (.m3u / .m3u8)</label>
+          <input type="url" id="playlist-url" placeholder="https://example.com/playlist.m3u">
+        </div>
+        <div class="form-divider"><span>OR</span></div>
+        <div class="form-group">
+          <label for="playlist-file" class="file-upload-label">
+            <i data-lucide="upload-cloud"></i>
+            <span>Choose local .m3u file</span>
+            <input type="file" id="playlist-file" accept=".m3u,.m3u8" class="file-input">
+          </label>
+        </div>
+        <div class="form-group">
+          <label for="playlist-name">Custom Playlist Name</label>
+          <input type="text" id="playlist-name" placeholder="My Playlist">
+        </div>
+        
+        <div class="saved-playlists-box" style="margin-top: 24px;">
+          <h4>Saved Playlists</h4>
+          <div class="saved-playlists-list" id="saved-playlists-container">
+            <!-- Saved custom playlists -->
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" id="btn-cancel-custom">Close</button>
+        <button class="btn btn-primary" id="load-playlist-btn">Load & Save</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: Settings Config -->
+  <div class="modal-overlay" id="settings-modal">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h2><i data-lucide="settings" class="modal-icon-header"></i> Application Settings</h2>
+        <button class="modal-close" id="close-settings-modal"><i data-lucide="x"></i></button>
+      </div>
+      <div class="modal-content">
+        <div class="settings-list">
+          <div class="setting-item">
+            <div class="setting-info">
+              <span class="setting-label">Default Aspect Ratio</span>
+              <span class="setting-desc">Resize stream to fit screen</span>
+            </div>
+            <select id="settings-aspect-ratio" class="settings-select">
+              <option value="auto">Auto (Default)</option>
+              <option value="16-9">16:9</option>
+              <option value="4-3">4:3</option>
+              <option value="fill">Fill Screen</option>
+            </select>
+          </div>
+
+          <div class="setting-item">
+            <div class="setting-info">
+              <span class="setting-label">Autoplay Streams</span>
+              <span class="setting-desc">Play immediately upon selection</span>
+            </div>
+            <label class="switch">
+              <input type="checkbox" id="settings-autoplay" checked>
+              <span class="slider"></span>
+            </label>
+          </div>
+
+          <div class="setting-item">
+            <div class="setting-info">
+              <span class="setting-label">API Cache Info</span>
+              <span class="setting-desc">Flush cached playlists/channels</span>
+            </div>
+            <button class="btn btn-danger btn-sm" id="clear-cache-btn">Clear App Data</button>
+          </div>
+
+          <div class="setting-item">
+            <div class="setting-info">
+              <span class="setting-label">Use CORS Proxy</span>
+              <span class="setting-desc">Route streams through a proxy to bypass geo-blocks</span>
+            </div>
+            <label class="switch">
+              <input type="checkbox" id="settings-use-proxy">
+              <span class="slider"></span>
+            </label>
+          </div>
+
+          <div class="setting-item" id="proxy-url-row" style="display: none;">
+            <div class="setting-info">
+              <span class="setting-label">Proxy URL</span>
+              <span class="setting-desc">Default: /proxy?url= (local server)</span>
+            </div>
+            <input type="text" id="settings-proxy-url" class="settings-input" placeholder="/proxy?url=" style="width: 220px;">
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-primary" id="btn-close-settings">Done</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: Troubleshooting Info -->
+  <div class="modal-overlay" id="troubleshoot-modal">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h2><i data-lucide="help-circle" class="modal-icon-header"></i> Why did the stream fail?</h2>
+        <button class="modal-close" id="close-modal"><i data-lucide="x"></i></button>
+      </div>
+      <div class="modal-content">
+
+        <div class="alert alert-info" style="margin-bottom: 16px;">
+          <strong>✅ Local Proxy is Active</strong><br>
+          Your stream is already being routed through the built-in local proxy on <code>localhost:3000/proxy</code>.
+          CORS restrictions are bypassed automatically — the problem is with the stream itself.
+        </div>
+
+        <h3 style="margin-bottom: 8px;">Common reasons a stream fails:</h3>
+        <ul style="padding-left: 20px; line-height: 1.8; color: var(--text-muted);">
+          <li><strong>Stream is offline:</strong> The broadcaster's server is down or the URL has changed.</li>
+          <li><strong>Geo-blocked:</strong> The broadcaster only allows viewers from specific countries. A VPN set to that country would help.</li>
+          <li><strong>Rate limited:</strong> The server is rejecting too many requests. Wait a minute and retry.</li>
+          <li><strong>DRM Protected:</strong> Some streams require a licence key that browsers cannot handle directly.</li>
+        </ul>
+
+        <h3 style="margin-top: 16px; margin-bottom: 8px;">💡 Tips to find working streams:</h3>
+        <ul style="padding-left: 20px; line-height: 1.8; color: var(--text-muted);">
+          <li>Click <strong>"Try Next Channel"</strong> to quickly skip to the next one.</li>
+          <li>Try channels from a <strong>different country</strong> (e.g. UK, Canada, India tend to have many live streams).</li>
+          <li>Try <strong>News</strong> or <strong>Entertainment</strong> categories — they have the highest uptime.</li>
+          <li>Load a <strong>custom M3U playlist</strong> you know works using the folder icon in the sidebar.</li>
+        </ul>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" id="modal-ok-btn">Got it</button>
+        <button class="btn btn-primary" id="modal-next-channel-btn"><i data-lucide="skip-forward"></i> Try Next Channel</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Scripts -->
+  <script src="js/parser.js"></script>
+  <script src="js/player.js"></script>
+  <script src="js/ui.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
